@@ -125,6 +125,8 @@ class Client
     /**
      * Generate connection token
      *
+     * @link http://centrifuge.readthedocs.org/en/latest/content/tokens_and_signatures.html?highlight=token
+     *
      * @param string $user_id
      * @param string $timestamp
      * @param null $info
