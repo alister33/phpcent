@@ -36,8 +36,12 @@ class Client
         return $this;
     }
 
-    public function setApiSecret($secret){
-        $this->apiSecret=$secret;
+    /**
+     * @param string $secret
+     */
+    public function setApiSecret($secret)
+    {
+        $this->apiSecret = $secret;
     }
 
     public function getHost()
@@ -45,9 +49,16 @@ class Client
         return $this->host;
     }
 
-    public function setProject($id, $key, $apisecret=null)
+    /**
+     * @param      $id
+     * @param      $key
+     * @param null $apiSecret
+     * @return $this
+     */
+    public function setProject($id, $key, $apiSecret = null)
     {
-        if ($apisecret) $this->apiSecret=$apisecret;
+        if ($apiSecret)
+            $this->apiSecret = $apiSecret;
         $this->projectId = $id;
         $this->projectKey = $key;
         return $this;
@@ -113,8 +124,11 @@ class Client
      */
     public function send($method, $params=[])
     {
-        if (empty($params)) $params=new \StdClass();
-        if ($this->_su) $params["_project"]=$this->projectId;
+        if (empty($params))
+            $params=new \StdClass();
+        if ($this->_su)
+            $params["_project"]=$this->projectId;
+
         $data = json_encode(["method" => $method, "params" => $params]);
         try {
             $result = $this->getTransport()->communicate($this->host, $this->projectId, ["data" => $data, "sign" => $this->buildSign($data)]);
@@ -139,6 +153,7 @@ class Client
             throw new \Exception("Project id should not be empty");
         if ($this->_su&& $this->apiSecret==null)
             throw new \Exception("Api secret is required for superuser mode");
+
         $ctx = hash_init("md5", HASH_HMAC, ($this->_su)? $this->apiSecret: $this->projectKey);
         hash_update($ctx, ($this->_su)? "_": $this->projectId);
         hash_update($ctx, $data);
@@ -150,7 +165,9 @@ class Client
      */
     private function getTransport()
     {
-        if ($this->transport == null) $this->setTransport(new Transport());
+        if ($this->transport == null)
+            $this->setTransport(new Transport());
+
         return $this->transport;
     }
 
@@ -161,6 +178,5 @@ class Client
     {
         $this->transport = $transport;
     }
-
 
 }
