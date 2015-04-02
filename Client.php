@@ -20,11 +20,9 @@ class Client
     private $_su=false;
 
 
-
     public function __construct($host = "http://localhost:8000")
     {
         $this->host = $host;
-
     }
 
     /**
