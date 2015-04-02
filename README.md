@@ -1,7 +1,7 @@
 Phpcent
 ========
 
-Php library to communicate with Centrifuge
+Php library to communicate with Centrifuge version above 0.7
 
 Library is published on the Composer: https://packagist.org/packages/sl4mmer/phpcent
 ```php

@@ -1,9 +1,8 @@
 <?php
 /**
- * Created by IntelliJ IDEA.
+ * Class
  * User: sl4mmer
- * Date: 07.10.14
- * Time: 15:29
+ * Date: 07.10.14 15:29
  */
 
 namespace phpcent;
@@ -23,7 +22,7 @@ class Transport implements ITransport {
         curl_close($ch);
 
         if (empty($headers["http_code"]) || ($headers["http_code"] != 200))
-            throw new \Exception("Response code: ".$headers["http_code"].PHP_EOL."Body: ".$response);
+            throw new \Exception("Response code: " . $headers["http_code"] . PHP_EOL . "Body: " . $response);
 
         return json_decode($response,true);
     }

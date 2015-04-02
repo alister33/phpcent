@@ -1,47 +1,32 @@
 <?php
+/**
+ * Class centrifuge php driver
+ * User: sl4mmer
+ * Date: 02.04.2015 12:30
+ *
+ * @version 0.7
+ */
+
 namespace phpcent;
 
 
 class Client
 {
     private $host;
-    private $projectKey;
+    private $secretKey;
     private $projectId;
 
-    /**
-     * @var string secret api key from configuration file. Required for superuser mode
-     */
-
-    private $apiSecret;
     /**
      * @var ITransport $transport
      */
     private $transport;
-    private $_su=false;
 
-
+    /**
+     * @param string $host
+     */
     public function __construct($host = "http://localhost:8000")
     {
         $this->host = $host;
-    }
-
-    /**
-     * Enables superuser mode for next request
-     * Don't use it. Will be available in next commit
-     * @todo Broken =)
-     * @return $this
-     */
-    public function su(){
-        $this->_su=true;
-        return $this;
-    }
-
-    /**
-     * @param string $secret
-     */
-    public function setApiSecret($secret)
-    {
-        $this->apiSecret = $secret;
     }
 
     public function getHost()
@@ -50,17 +35,16 @@ class Client
     }
 
     /**
-     * @param      $id
-     * @param      $key
-     * @param null $apiSecret
+     * Set project details
+     *
+     * @param string $project_id
+     * @param string $secret_key
      * @return $this
      */
-    public function setProject($id, $key, $apiSecret = null)
+    public function setProject($project_id, $secret_key)
     {
-        if ($apiSecret)
-            $this->apiSecret = $apiSecret;
-        $this->projectId = $id;
-        $this->projectKey = $key;
+        $this->projectId = $project_id;
+        $this->secretKey = $secret_key;
         return $this;
     }
 
@@ -122,41 +106,74 @@ class Client
      * @return mixed
      * @throws \Exception
      */
-    public function send($method, $params=[])
+    public function send($method, $params = [])
     {
         if (empty($params))
-            $params=new \StdClass();
-        if ($this->_su)
-            $params["_project"]=$this->projectId;
+            $params = new \StdClass();
 
-        $data = json_encode(["method" => $method, "params" => $params]);
         try {
-            $result = $this->getTransport()->communicate($this->host, $this->projectId, ["data" => $data, "sign" => $this->buildSign($data)]);
+            $data   = json_encode(["method" => $method, "params" => $params]);
+            $result = $this->getTransport()->communicate($this->host, $this->projectId, ["data" => $data, "sign" => $this->generateApiSign($data)]);
+
         } catch (\Exception $exception){
-            $this->_su=false;
             throw $exception;
         }
-        $this->_su=false;
+
         return $result;
     }
 
     /**
-     * @param $data
-     * @return string $hash
-     * @throws \Exception if required data not specified
+     * Generate connection token
+     *
+     * @param string $user_id
+     * @param string $timestamp
+     * @param null $info
+     * @return string
      */
-    public function buildSign($data)
+    public function generateToken($user_id, $timestamp, $info = Null)
     {
-        if ($this->projectKey==null)
-            throw new \Exception("Project key should nod be empty");
-        if ($this->projectId==null)
-            throw new \Exception("Project id should not be empty");
-        if ($this->_su&& $this->apiSecret==null)
-            throw new \Exception("Api secret is required for superuser mode");
+        $this->checkKeys();
 
-        $ctx = hash_init("md5", HASH_HMAC, ($this->_su)? $this->apiSecret: $this->projectKey);
-        hash_update($ctx, ($this->_su)? "_": $this->projectId);
-        hash_update($ctx, $data);
+        $ctx = hash_init("sha256", HASH_HMAC, $this->secretKey);
+        hash_update($ctx, $this->projectId);
+        hash_update($ctx, $user_id);
+        hash_update($ctx, $timestamp);
+        hash_update($ctx, !empty($info) ? json_encode($info) : "{}");
+
+        return hash_final($ctx);
+    }
+
+    /**
+     * Generate sign for Api requests
+     *
+     * @param string $encoded_data
+     * @return string
+     */
+    public function generateApiSign($encoded_data)
+    {
+        $this->checkKeys();
+
+        $ctx = hash_init("sha256", HASH_HMAC, $this->secretKey);
+        hash_update($ctx, $this->projectId);
+        hash_update($ctx, $encoded_data);
+        return hash_final($ctx);
+    }
+
+    /**
+     * @param string $client_id
+     * @param string $channel
+     * @param null $info
+     * @return string
+     */
+    public function generateChannelSigh($client_id, $channel, $info = Null)
+    {
+        $this->checkKeys();
+
+        $ctx = hash_init("sha256", HASH_HMAC, $this->secretKey);
+        hash_update($ctx, $client_id);
+        hash_update($ctx, $channel);
+        hash_update($ctx, !empty($info) ? json_encode($info) : "{}");
+
         return hash_final($ctx);
     }
 
@@ -177,6 +194,19 @@ class Client
     public function setTransport(ITransport $transport)
     {
         $this->transport = $transport;
+    }
+
+    /**
+     * Check internal project and secret key
+     * @throws \Exception
+     */
+    private function checkKeys()
+    {
+        if ($this->secretKey == null)
+            throw new \Exception("Project key should not be empty");
+
+        if ($this->projectId == null)
+            throw new \Exception("Project id should not be empty");
     }
 
 }
