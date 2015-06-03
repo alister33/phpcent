@@ -2,7 +2,7 @@
     "name": "SmartCrowd/phpcent",
     "description":"Php library to communicate with Centrifuge for version 0.7 and above",
     "keywords": ["centrifuge"],
-    "homepage": "https://github.com/sl4mmer/phpcent",
+    "homepage": "https://github.com/SmartCrowd/phpcent",
     "license": "MIT",
     "autoload": {
         "psr-0" : {
