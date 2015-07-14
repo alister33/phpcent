@@ -1,3 +1,5 @@
+[![Requirements Status](https://requires.io/github/SmartCrowd/phpcent/requirements.svg?branch=master)](https://requires.io/github/SmartCrowd/phpcent/requirements/?branch=master)
+
 Phpcent
 ========
 
