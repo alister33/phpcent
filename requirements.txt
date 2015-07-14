@@ -1,2 +1,2 @@
 php>=5.4.0
-ext-curl=*
+ext-curl>=1.1
