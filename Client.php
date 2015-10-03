@@ -140,7 +140,7 @@ class Client
         hash_update($ctx, $this->projectId);
         hash_update($ctx, $user_id);
         hash_update($ctx, $timestamp);
-        hash_update($ctx, !empty($info) ? json_encode($info) : "{}");
+        hash_update($ctx, !empty($info) ? json_encode($info) : "");
 
         return hash_final($ctx);
     }
