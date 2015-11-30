@@ -3,11 +3,11 @@
 namespace phpcent;
 
 /**
- * Class centrifuge php driver
+ * Centrifuge client for communication with centrifugo v1.0 and above
  * User: komrakov
  * Date: 02.04.2015 12:30
  *
- * @version 1.1
+ * @version 1.0
  */
 class Client
 {
@@ -25,6 +25,16 @@ class Client
         $this->secret            = isset($options['secret'])            ? $options['secret']            : "";
     }
 
+    /**
+     * Publish allows to send message into channel.
+     *
+     * @param string $channel
+     * @param mixed $data
+     * @param string $client
+     *
+     * @return array
+     * @throws \Exception
+     */
     public function publish($channel, $data, $client = "")
     {
         $request = [
@@ -42,6 +52,8 @@ class Client
     }
 
     /**
+     * Unsubscribe allows to unsubscribe user from channel.
+     *
      * @param string $channel
      * @param string $user_id
      *
@@ -61,6 +73,8 @@ class Client
     }
 
     /**
+     * Disconnect allows to disconnect user by its ID.
+     *
      * @param string $user_id
      *
      * @return array
@@ -78,6 +92,8 @@ class Client
     }
 
     /**
+     * Presence allows to get channel presence information (all clients currently subscribed on this channel).
+     *
      * @param string $channel
      *
      * @return array
@@ -95,6 +111,8 @@ class Client
     }
 
     /**
+     * History allows to get channel history information (list of last messages sent into channel).
+     *
      * @param string $channel
      *
      * @return array
@@ -112,6 +130,8 @@ class Client
     }
 
     /**
+     * Channels method allows to get list of active (with one or more subscribers) channels.
+     *
      * @return array
      */
     public function channels()
@@ -125,6 +145,8 @@ class Client
     }
 
     /**
+     * Stats method allows to get statistics about running Centrifugo nodes.
+     *
      * @return array
      */
     public function stats()
@@ -138,12 +160,14 @@ class Client
     }
 
     /**
-     * @param $request
+     * Method for sending signed api requests
+     *
+     * @param array $request
      *
      * @return array
      * @throws \Exception
      */
-    public function request($request)
+    public function request(array $request)
     {
         $encoded_data = json_encode($request);
         $sign = $this->generateApiSign($this->secret, $encoded_data);
@@ -158,34 +182,50 @@ class Client
 
     /**
      * @param \GuzzleHttp\Client $guzzle
+     *
+     * @return $this
      */
-    public function setGuzzle($guzzle)
+    public function withGuzzle($guzzle)
     {
         $this->guzzle = $guzzle;
+
+        return $this;
     }
 
     /**
      * @param string $hashing_algorithm
+     *
+     * @return $this
      */
-    public function setHashingAlgorithm($hashing_algorithm)
+    public function withHashingAlgorithm($hashing_algorithm)
     {
         $this->hashing_algorithm = $hashing_algorithm;
+
+        return $this;
     }
 
     /**
      * @param string $api_url
+     *
+     * @return $this
      */
-    public function setApiUrl($api_url)
+    public function withApiUrl($api_url)
     {
         $this->api_url = $api_url;
+
+        return $this;
     }
 
     /**
      * @param string $secret
+     *
+     * @return $this
      */
-    public function setSecret($secret)
+    public function withSecret($secret)
     {
         $this->secret = $secret;
+
+        return $this;
     }
 
     /**

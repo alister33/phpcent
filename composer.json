@@ -1,6 +1,6 @@
 {
     "name": "SmartCrowd/phpcent",
-    "description":"Php library to communicate with Centrifuge for version 1.1",
+    "description":"Php library to communicate with Centrifuge for version 1.0 and 1.1",
     "keywords": ["centrifuge"],
     "homepage": "https://github.com/SmartCrowd/phpcent",
     "license": "MIT",
