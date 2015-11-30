@@ -1,214 +1,257 @@
 <?php
-/**
- * Class centrifuge php driver
- * User: sl4mmer
- * Date: 02.04.2015 12:30
- *
- * @version 0.7
- */
 
 namespace phpcent;
 
-
+/**
+ * Class centrifuge php driver
+ * User: komrakov
+ * Date: 02.04.2015 12:30
+ *
+ * @version 1.1
+ */
 class Client
 {
-    private $host;
-    private $secretKey;
-    private $projectId;
 
-    /**
-     * @var ITransport $transport
-     */
-    private $transport;
+    protected $guzzle;
+    protected $hashing_algorithm;
+    protected $api_url;
+    protected $secret;
 
-    /**
-     * @param string $host
-     */
-    public function __construct($host = "http://localhost:8000")
+    public function __construct(array $options = [])
     {
-        $this->host = $host;
+        $this->guzzle            = isset($options['guzzle'])            ? $options['guzzle']            : new \GuzzleHttp\Client();
+        $this->hashing_algorithm = isset($options['hashing_algorithm']) ? $options['hashing_algorithm'] : "sha256";
+        $this->api_url           = isset($options['api_url'])           ? $options['api_url']           : "http://localhost:8000/api/";
+        $this->secret            = isset($options['secret'])            ? $options['secret']            : "";
     }
 
-    public function getHost()
+    public function publish($channel, $data, $client = "")
     {
-        return $this->host;
+        $request = [
+            'method' => 'publish',
+            'params' => [
+                'channel' => $channel,
+                'data'    => $data,
+            ],
+        ];
+        if (!empty($client)) {
+            $request['params']['client'] = $client;
+        }
+
+        return $this->request($request);
     }
 
     /**
-     * Set project details
+     * @param string $channel
+     * @param string $user_id
      *
-     * @param string $project_id
-     * @param string $secret_key
-     * @return $this
+     * @return array
      */
-    public function setProject($project_id, $secret_key)
+    public function unsubscribe($channel, $user_id)
     {
-        $this->projectId = $project_id;
-        $this->secretKey = $secret_key;
-        return $this;
+        $request = [
+            'method' => 'unsubscribe',
+            'params' => [
+                'channel' => $channel,
+                'user'    => $user_id,
+            ],
+        ];
+
+        return $this->request($request);
     }
 
     /**
-     * send message into channel of namespace. data is an actual information you want to send into channel
-     * @param $channel
-     * @param array $data
-     * @return mixed
+     * @param string $user_id
+     *
+     * @return array
      */
-    public function publish($channel, $data = [])
+    public function disconnect($user_id)
     {
-        return $this->send("publish", ["channel" => $channel, "data" => $data]);
+        $request = [
+            'method' => 'disconnect',
+            'params' => [
+                'user' => $user_id,
+            ],
+        ];
+
+        return $this->request($request);
     }
 
     /**
-     * unsubscribe user with certain ID from channel.
-     * @param $channel
-     * @param $userId
-     * @return mixed
-     */
-    public function unsubscribe($channel, $userId)
-    {
-        return $this->send("unsubscribe", ["channel" => $channel, "user" => $userId]);
-    }
-
-    /**
-     * disconnect user by user ID.
-     * @param $userId
-     * @return mixed
-     */
-    public function disconnect($userId)
-    {
-        return $this->send("disconnect", ["user" => $userId]);
-    }
-
-    /**
-     * get channel presence information (all clients currently subscribed on this channel).
-     * @param $channel
-     * @return mixed
+     * @param string $channel
+     *
+     * @return array
      */
     public function presence($channel)
     {
-        return $this->send("presence", ["channel" => $channel]);
+        $request = [
+            'method' => 'presence',
+            'params' => [
+                'channel' => $channel,
+            ],
+        ];
+
+        return $this->request($request);
     }
 
     /**
-     * get channel history information (list of last messages sent into channel).
-     * @param $channel
-     * @return mixed
+     * @param string $channel
+     *
+     * @return array
      */
     public function history($channel)
     {
-        return $this->send("presence", ["channel" => $channel]);
+        $request = [
+            'method' => 'history',
+            'params' => [
+                'channel' => $channel,
+            ],
+        ];
+
+        return $this->request($request);
     }
 
     /**
-     * @param string $method
-     * @param array $params
-     * @return mixed
+     * @return array
+     */
+    public function channels()
+    {
+        $request = [
+            'method' => 'channels',
+            'params' => [],
+        ];
+
+        return $this->request($request);
+    }
+
+    /**
+     * @return array
+     */
+    public function stats()
+    {
+        $request = [
+            'method' => 'stats',
+            'params' => [],
+        ];
+
+        return $this->request($request);
+    }
+
+    /**
+     * @param $request
+     *
+     * @return array
      * @throws \Exception
      */
-    public function send($method, $params = [])
+    public function request($request)
     {
-        if (empty($params))
-            $params = new \StdClass();
-
-        try {
-            $data   = json_encode(["method" => $method, "params" => $params]);
-            $result = $this->getTransport()->communicate($this->host, $this->projectId, ["data" => $data, "sign" => $this->generateApiSign($data)]);
-
-        } catch (\Exception $exception){
-            throw $exception;
+        $encoded_data = json_encode($request);
+        $sign = $this->generateApiSign($this->secret, $encoded_data);
+        $body = $this->guzzle->post($this->api_url, ['form_params' => ['sign' => $sign, 'data' => $encoded_data]])->getBody();
+        $result = json_decode($body, true);
+        if (!isset($result[0])) {
+            throw new \Exception("Invalid response format");
         }
 
-        return $result;
+        return $result[0];
     }
 
     /**
-     * Generate connection token
+     * @param \GuzzleHttp\Client $guzzle
+     */
+    public function setGuzzle($guzzle)
+    {
+        $this->guzzle = $guzzle;
+    }
+
+    /**
+     * @param string $hashing_algorithm
+     */
+    public function setHashingAlgorithm($hashing_algorithm)
+    {
+        $this->hashing_algorithm = $hashing_algorithm;
+    }
+
+    /**
+     * @param string $api_url
+     */
+    public function setApiUrl($api_url)
+    {
+        $this->api_url = $api_url;
+    }
+
+    /**
+     * @param string $secret
+     */
+    public function setSecret($secret)
+    {
+        $this->secret = $secret;
+    }
+
+    /**
+     * When client connects to Centrifuge from browser it should provide several
+     * connection parameters: "user", "timestamp", "info" and "token".
      *
-     * @link http://centrifuge.readthedocs.org/en/latest/content/tokens_and_signatures.html?highlight=token
+     * @link https://fzambia.gitbooks.io/centrifugal/content/server/tokens_and_signatures.html
      *
-     * @param string $user_id
-     * @param string $timestamp
-     * @param null $info
+     * @param $secret
+     * @param $user
+     * @param $timestamp
+     * @param string $info
+     *
      * @return string
      */
-    public function generateToken($user_id, $timestamp, $info = Null)
+    public function generateToken($secret, $user, $timestamp, $info = "")
     {
-        $this->checkKeys();
+        $context = hash_init($this->hashing_algorithm, HASH_HMAC, $secret);
+        hash_update($context, $user);
+        hash_update($context, $timestamp);
+        hash_update($context, $info);
 
-        $ctx = hash_init("sha256", HASH_HMAC, $this->secretKey);
-        hash_update($ctx, $this->projectId);
-        hash_update($ctx, $user_id);
-        hash_update($ctx, $timestamp);
-        hash_update($ctx, !empty($info) ? json_encode($info) : "{}");
-
-        return hash_final($ctx);
+        return hash_final($context);
     }
 
     /**
-     * Generate sign for Api requests
+     * When client wants to subscribe on private channel Centrifuge
+     * js client sends AJAX POST request to your web application.
+     * This request contains client ID string and one or multiple private channels.
+     * In response you should return an object where channels are keys.
      *
-     * @param string $encoded_data
-     * @return string
-     */
-    public function generateApiSign($encoded_data)
-    {
-        $this->checkKeys();
-
-        $ctx = hash_init("sha256", HASH_HMAC, $this->secretKey);
-        hash_update($ctx, $this->projectId);
-        hash_update($ctx, $encoded_data);
-        return hash_final($ctx);
-    }
-
-    /**
-     * @param string $client_id
+     * @link https://fzambia.gitbooks.io/centrifugal/content/server/tokens_and_signatures.html
+     *
+     * @param $secret
+     * @param $client
      * @param string $channel
-     * @param null $info
+     * @param string $info
+     *
      * @return string
      */
-    public function generateChannelSigh($client_id, $channel, $info = Null)
+    public function generateChannelSign($secret, $client, $channel, $info = "")
     {
-        $this->checkKeys();
+        $context = hash_init($this->hashing_algorithm, HASH_HMAC, $secret);
+        hash_update($context, $client);
+        hash_update($context, $channel);
+        hash_update($context, $info);
 
-        $ctx = hash_init("sha256", HASH_HMAC, $this->secretKey);
-        hash_update($ctx, $client_id);
-        hash_update($ctx, $channel);
-        hash_update($ctx, !empty($info) ? json_encode($info) : "{}");
-
-        return hash_final($ctx);
+        return hash_final($context);
     }
 
     /**
-     * @return ITransport
+     * When you use Centrifugo server API you should also provide sign in each request.
+     *
+     * @link https://fzambia.gitbooks.io/centrifugal/content/server/tokens_and_signatures.html
+     *
+     * @param $secret
+     * @param $encoded_data
+     *
+     * @return string
      */
-    private function getTransport()
+    public function generateApiSign($secret, $encoded_data)
     {
-        if ($this->transport == null)
-            $this->setTransport(new Transport());
+        $context = hash_init($this->hashing_algorithm, HASH_HMAC, $secret);
+        hash_update($context, $encoded_data);
 
-        return $this->transport;
-    }
-
-    /**
-     * @param ITransport $transport
-     */
-    public function setTransport(ITransport $transport)
-    {
-        $this->transport = $transport;
-    }
-
-    /**
-     * Check internal project and secret key
-     * @throws \Exception
-     */
-    private function checkKeys()
-    {
-        if ($this->secretKey == null)
-            throw new \Exception("Project key should not be empty");
-
-        if ($this->projectId == null)
-            throw new \Exception("Project id should not be empty");
+        return hash_final($context);
     }
 
 }
