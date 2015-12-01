@@ -2,14 +2,17 @@
 
 namespace phpcent;
 
+use phpcent\Exceptions\BadResponseException;
+
 /**
  * Centrifuge client for communication with centrifugo v1.0 and above
+ *
  * User: komrakov
  * Date: 02.04.2015 12:30
  *
  * @version 1.0
  */
-class Client
+class Client implements ServerApiInterface, AuthInterface
 {
 
     protected $guzzle;
@@ -58,6 +61,7 @@ class Client
      * @param string $user_id
      *
      * @return array
+     * @throws \Exception
      */
     public function unsubscribe($channel, $user_id)
     {
@@ -78,6 +82,7 @@ class Client
      * @param string $user_id
      *
      * @return array
+     * @throws \Exception
      */
     public function disconnect($user_id)
     {
@@ -97,6 +102,7 @@ class Client
      * @param string $channel
      *
      * @return array
+     * @throws \Exception
      */
     public function presence($channel)
     {
@@ -116,6 +122,7 @@ class Client
      * @param string $channel
      *
      * @return array
+     * @throws \Exception
      */
     public function history($channel)
     {
@@ -133,6 +140,7 @@ class Client
      * Channels method allows to get list of active (with one or more subscribers) channels.
      *
      * @return array
+     * @throws \Exception
      */
     public function channels()
     {
@@ -148,6 +156,7 @@ class Client
      * Stats method allows to get statistics about running Centrifugo nodes.
      *
      * @return array
+     * @throws \Exception
      */
     public function stats()
     {
@@ -165,7 +174,7 @@ class Client
      * @param array $request
      *
      * @return array
-     * @throws \Exception
+     * @throws BadResponseException
      */
     public function request(array $request)
     {
@@ -174,7 +183,7 @@ class Client
         $body = $this->guzzle->post($this->api_url, ['form_params' => ['sign' => $sign, 'data' => $encoded_data]])->getBody();
         $result = json_decode($body, true);
         if (!isset($result[0])) {
-            throw new \Exception("Invalid response format");
+            throw new BadResponseException("Invalid response format");
         }
 
         return $result[0];

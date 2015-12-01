@@ -5,8 +5,8 @@
     "homepage": "https://github.com/SmartCrowd/phpcent",
     "license": "MIT",
     "autoload": {
-        "psr-0" : {
-            "phpcent" : ".."
+        "psr-4" : {
+            "phpcent\\" : "src/"
         }
     },
     "require": {
