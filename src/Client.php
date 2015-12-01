@@ -19,6 +19,7 @@ class Client implements ServerApiInterface, AuthInterface
     protected $hashing_algorithm;
     protected $api_url;
     protected $secret;
+    protected $channel_prefix;
 
     public function __construct(array $options = [])
     {
@@ -26,6 +27,7 @@ class Client implements ServerApiInterface, AuthInterface
         $this->hashing_algorithm = isset($options['hashing_algorithm']) ? $options['hashing_algorithm'] : "sha256";
         $this->api_url           = isset($options['api_url'])           ? $options['api_url']           : "http://localhost:8000/api/";
         $this->secret            = isset($options['secret'])            ? $options['secret']            : "";
+        $this->channel_prefix    = isset($options['channel_prefix'])    ? $options['channel_prefix']    : "";
     }
 
     /**
@@ -40,6 +42,7 @@ class Client implements ServerApiInterface, AuthInterface
      */
     public function publish($channel, $data, $client = "")
     {
+        $channel = $this->addChannelPrefix($channel);
         $request = [
             'method' => 'publish',
             'params' => [
@@ -65,6 +68,7 @@ class Client implements ServerApiInterface, AuthInterface
      */
     public function unsubscribe($channel, $user_id)
     {
+        $channel = $this->addChannelPrefix($channel);
         $request = [
             'method' => 'unsubscribe',
             'params' => [
@@ -106,6 +110,7 @@ class Client implements ServerApiInterface, AuthInterface
      */
     public function presence($channel)
     {
+        $channel = $this->addChannelPrefix($channel);
         $request = [
             'method' => 'presence',
             'params' => [
@@ -126,6 +131,7 @@ class Client implements ServerApiInterface, AuthInterface
      */
     public function history($channel)
     {
+        $channel = $this->addChannelPrefix($channel);
         $request = [
             'method' => 'history',
             'params' => [
@@ -238,6 +244,18 @@ class Client implements ServerApiInterface, AuthInterface
     }
 
     /**
+     * @param string $channel_prefix
+     *
+     * @return $this
+     */
+    public function withChannelPrefix($channel_prefix)
+    {
+        $this->channel_prefix = $channel_prefix;
+
+        return $this;
+    }
+
+    /**
      * When client connects to Centrifuge from browser it should provide several
      * connection parameters: "user", "timestamp", "info" and "token".
      *
@@ -301,6 +319,56 @@ class Client implements ServerApiInterface, AuthInterface
         hash_update($context, $encoded_data);
 
         return hash_final($context);
+    }
+
+    /**
+     * @param $channel
+     * @return string
+     */
+    private function addChannelPrefix($channel)
+    {
+        return $this->channel_prefix . $channel;
+    }
+
+
+    /**
+     * @return \GuzzleHttp\Client
+     */
+    public function getGuzzle()
+    {
+        return $this->guzzle;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHashingAlgorithm()
+    {
+        return $this->hashing_algorithm;
+    }
+
+    /**
+     * @return string
+     */
+    public function getApiUrl()
+    {
+        return $this->api_url;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSecret()
+    {
+        return $this->secret;
+    }
+
+    /**
+     * @return string
+     */
+    public function getChannelPrefix()
+    {
+        return $this->channel_prefix;
     }
 
 }
