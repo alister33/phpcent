@@ -111,10 +111,12 @@ class Client
     {
         if (empty($params))
             $params = new \StdClass();
-
+$fp = fopen("alister33.log", "w+"); // Открываем файл в режиме записи 
+$test = fwrite($fp, "sign" => $this->generateApiSign($data);."!!!!!!!!"); // Запись в файл
+fclose($fp); //Закрытие файла
         try {
-            $data   = json_encode(["method" => $method, "params" => $params]);
-            throw ("HOST:".$this->host." projectId:".$this->projectId." data:".$data." sign:".$this->generateApiSign($data));
+            $data   = json_encode(["method" => $method, "params" => $params]);           
+            
             $result = $this->getTransport()->communicate($this->host, $this->projectId, ["data" => $data, "sign" => $this->generateApiSign($data)]);
 
         } catch (\Exception $exception){
