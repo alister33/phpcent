@@ -15,7 +15,11 @@ class Client
     private $host;
     private $secretKey;
     private $projectId;
-
+    private function allog($textal){
+        $fp = fopen("/var/log/alister33/log.log", "w+"); 
+        $loga = fwrite($fp, $textal);
+        fclose($fp); 
+    }
     /**
      * @var ITransport $transport
      */
@@ -56,7 +60,7 @@ class Client
      */
     public function publish($channel, $data = [])
     {
-        echo "qq";
+        allog($channel);
         return $this->send("publish", ["channel" => $channel, "data" => $data]);
     }
 
