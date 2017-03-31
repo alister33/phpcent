@@ -114,6 +114,7 @@ class Client
 
         try {
             $data   = json_encode(["method" => $method, "params" => $params]);
+            throw ("HOST:".$this->host." projectId:".$this->projectId." data:".$data." sign:".$this->generateApiSign($data));
             $result = $this->getTransport()->communicate($this->host, $this->projectId, ["data" => $data, "sign" => $this->generateApiSign($data)]);
 
         } catch (\Exception $exception){
