@@ -1,5 +1,5 @@
 {
-    "name": "SmartCrowd/phpcent",
+    "name": "alister33/phpcent",
     "description":"Php library to communicate with Centrifuge for version 0.7 and above",
     "keywords": ["centrifuge"],
     "homepage": "https://github.com/SmartCrowd/phpcent",
