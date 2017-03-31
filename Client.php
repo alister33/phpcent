@@ -1,7 +1,7 @@
 <?php
 /**
  * Class centrifuge php driver
- * User: sl4mmerl
+ * User: sl4mmer
  * Date: 02.04.2015 12:30
  *
  * @version 0.7
@@ -56,6 +56,7 @@ class Client
      */
     public function publish($channel, $data = [])
     {
+        echo "qq";
         return $this->send("publish", ["channel" => $channel, "data" => $data]);
     }
 
