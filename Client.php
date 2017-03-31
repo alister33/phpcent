@@ -1,7 +1,7 @@
 <?php
 /**
  * Class centrifuge php driver
- * User: sl4mmer
+ * User: sl4mmerl
  * Date: 02.04.2015 12:30
  *
  * @version 0.7
